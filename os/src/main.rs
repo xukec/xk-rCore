@@ -2,13 +2,18 @@
 #![no_main]
 
 mod lang_items;
+mod sbi;
 
+use crate::sbi::console_putchar;
 use core::arch::global_asm;
+
 global_asm!(include_str!("entry.asm"));
 
 #[no_mangle]
 pub fn rust_main() -> ! {
     clear_bss();
+    console_putchar('O' as usize);
+    console_putchar('K' as usize);
     loop {}
 }
 
