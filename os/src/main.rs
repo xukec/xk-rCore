@@ -37,8 +37,7 @@ pub fn rust_main() -> ! {
 
     trace!(
         "[kernel] .text [{:#x}, {:#x})",
-        stext as usize,
-        etext as usize
+        stext as usize, etext as usize
     );
     debug!(
         "[kernel] .rodata [{:#x}, {:#x})",

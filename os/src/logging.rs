@@ -4,7 +4,7 @@ struct SimpleLogger;
 
 impl Log for SimpleLogger {
     //是否应该记录具有给定元数据的日志记录
-    fn enabled(&self, metadata: &Metadata) -> bool {
+    fn enabled(&self, _metadata: &Metadata) -> bool {
         true
     }
     //日志记录逻辑
