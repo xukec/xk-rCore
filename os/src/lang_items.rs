@@ -1,3 +1,4 @@
+//错误处理
 use core::panic::PanicInfo;
 use crate::sbi::shutdown;
 use crate::println;
