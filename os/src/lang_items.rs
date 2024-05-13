@@ -1,7 +1,6 @@
 //错误处理
 use core::panic::PanicInfo;
 use crate::sbi::shutdown;
-use crate::println;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
