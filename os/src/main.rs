@@ -10,6 +10,8 @@ mod console;
 mod lang_items;
 mod sbi;
 mod logging;
+mod batch;
+mod sync;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
