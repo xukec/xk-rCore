@@ -13,6 +13,7 @@ mod logging;
 mod batch;
 mod sync;
 mod trap;
+//mod syscall;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
