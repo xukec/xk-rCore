@@ -1,5 +1,5 @@
 use core::arch::asm;
-
+use crate::trap::TrapContext;
 use lazy_static::*;
 use crate::sync::UPSafeCell;
 use crate::sbi::shutdown;
@@ -25,6 +25,19 @@ struct UserStack {
 impl KernelStack {
     fn get_sp(&self) -> usize {
         self.data.as_ptr() as usize + KERNEL_STACK_SIZE
+    }
+
+    fn push_context(&self, cx: TrapContext) -> &'static mut TrapContext {
+        //从 get_sp 获得的地址中减去 TrapContext 的大小
+        let cx_prt = (self.get_sp() - core::mem::size_of::<TrapContext>()) as *mut TrapContext;
+        //储存
+        unsafe {
+            *cx_prt = cx;
+        }
+        //返回可变原始指针
+        unsafe {
+            cx_prt.as_mut().unwrap()
+        }
     }
 }
 
@@ -129,5 +142,12 @@ pub fn run_next_app() -> ! {
     app_manager.move_to_next_app();
     drop(app_manager);
 
-    loop {}
+    extern "C" { fn __restore(cx_addr: usize); }
+    unsafe {
+        __restore(KERNEL_STACK.push_context(
+            TrapContext::app_init_context(APP_BASE_ADDRESS, USER_STACK.get_sp())
+        ) as *const _ as usize);
+    }
+    //不可能
+    panic!("Unreachable in batch::run_current_app!");
 }

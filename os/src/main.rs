@@ -13,7 +13,7 @@ mod logging;
 mod batch;
 mod sync;
 mod trap;
-//mod syscall;
+mod syscall;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
@@ -59,7 +59,12 @@ pub fn rust_main() -> ! {
     error!("[kernel] .bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
 
     //panic!("Shutdown machine!");
-    sbi::shutdown(false);
+    //sbi::shutdown(false);
+    trap::init();
+
+    batch::init();
+
+    batch::run_next_app();
 }
 
 fn clear_bss() {
