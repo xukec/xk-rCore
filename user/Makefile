@@ -15,9 +15,9 @@ BINS := $(patsubst $(APP_DIR)/%.rs, $(TARGET_DIR)/%.bin, $(APPS))
 #处理RISC-V 64位架构的二进制文件
 OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
-
+#@控制正在执行命令回显，加@不显示
 elf:
-	@cargo build --release
+	@python3 build.py
 
 #对于$(ELFS)列表中的每个ELF文件路径（存储在$(elf)中），使用rust-objcopy命令将其转换为二进制文件，
 #并将输出保存在与原始ELF文件相同的目录（由$(TARGET_DIR)指定）中，但文件扩展名更改为.bin。所有这一切都是在静默模式下完成的（由于@字符）。
@@ -30,3 +30,5 @@ build: binary
 
 clean:
 	@cargo clean
+
+.PHONY: elf binary build clean #伪目标：防止与实际文件名或目录名冲突
