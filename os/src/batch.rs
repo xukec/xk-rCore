@@ -3,12 +3,7 @@ use crate::trap::TrapContext;
 use lazy_static::*;
 use crate::sync::UPSafeCell;
 use crate::sbi::shutdown;
-
-const MAX_APP_NUM: usize = 16;
-const APP_BASE_ADDRESS: usize = 0x80400000;
-const APP_SIZE_LIMIT: usize = 0x20000;
-const USER_STACK_SIZE: usize = 4096 * 2;
-const KERNEL_STACK_SIZE: usize = 4096 * 2;
+use crate::config::*;
 
 static KERNEL_STACK: KernelStack = KernelStack { data: [0; KERNEL_STACK_SIZE] };
 static USER_STACK: UserStack = UserStack { data: [0; USER_STACK_SIZE] };
