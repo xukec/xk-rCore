@@ -91,8 +91,9 @@ pub fn load_app() {
     }
 }
 
-//跳转到应用程序（编号）的入口点 
+//返回cx：trap上下文的栈顶指针，通过__restore赋值给a0，进而恢复上下文，跳转到appi的入口点entry
 pub fn init_app_cx(app_id: usize) -> usize {
+    //println!("[kernel] spec:{:X}", get_base_i(app_id));
     KERNEL_STACK[app_id].push_context(TrapContext::app_init_context(
         get_base_i(app_id), 
         USER_STACK[app_id].get_sp()

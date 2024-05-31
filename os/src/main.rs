@@ -65,7 +65,7 @@ pub fn rust_main() -> ! {
     trap::init();
 
     batch::init();
-
+    loader::load_app();
     batch::run_next_app();
 }
 
