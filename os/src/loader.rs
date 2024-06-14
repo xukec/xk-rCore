@@ -47,7 +47,7 @@ fn get_base_i(app_id: usize) -> usize {
 }
 
 //得到app数量
-fn get_num_app() -> usize {
+pub fn get_num_app() -> usize {
     extern "C" {
         fn _num_app();
     }
