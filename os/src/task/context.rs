@@ -20,8 +20,8 @@ impl TaskContext {
             fn __restore();
         }
         Self {
-            ra: __restore as usize,
-            sp: kstack_ptr,
+            ra: __restore as usize, //ret返回后到__restore继续执行
+            sp: kstack_ptr, //trap上下文栈顶
             s: [0; 12],
         }
     }
