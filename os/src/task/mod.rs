@@ -1,6 +1,9 @@
 mod context;
 mod switch;
+//抑制 Clippy 的警告:同名的嵌套模块
+//#[allow(clippy::module_inception)]
 mod task;
+
 use context::TaskContext;
 use crate::loader::{get_num_app, init_app_cx};
 use crate::{config::MAX_APP_NUM, sync::UPSafeCell};
@@ -15,6 +18,24 @@ pub struct TaskManager {
 struct TaskManagerInner {
     tasks: [TaskControlBlock; MAX_APP_NUM],
     current_task: usize,
+}
+
+impl TaskManager {
+    fn mark_current_suspended(&self) {
+        let mut inner = self.inner.exclusive_access(); //获取可变引用
+        let current = inner.current_task;
+        inner.tasks[current].tasks_status = TaskStatus::Ready;
+    }
+
+    fn mark_current_exited(&self) {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].tasks_status = TaskStatus::Exited;
+    }
+
+    fn run_next_task(&self) {
+        
+    }
 }
 
 lazy_static! {
@@ -44,4 +65,26 @@ lazy_static! {
             },
         }
     };
+}
+
+pub fn suspend_current_and_run_next() {
+    mark_current_suspended(); //使当前任务暂停
+    run_next_task(); //尝试切换到下一个应用
+}
+
+pub fn exit_current_and_run_next() {
+    mark_current_exited(); //使当前任务退出
+    run_next_task();
+}
+
+fn mark_current_suspended() {
+    TASK_MANAGER.mark_current_suspended(); //修改当前应用的运行状态
+}
+
+fn mark_current_exited() {
+    TASK_MANAGER.mark_current_exited();
+}
+
+fn run_next_task() {
+    TASK_MANAGER.run_next_task();
 }
