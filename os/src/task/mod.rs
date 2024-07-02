@@ -5,6 +5,7 @@ mod switch;
 mod task;
 
 use context::TaskContext;
+use switch::__switch;
 use crate::loader::{get_num_app, init_app_cx};
 use crate::{config::MAX_APP_NUM, sync::UPSafeCell};
 use lazy_static::*;
@@ -33,8 +34,48 @@ impl TaskManager {
         inner.tasks[current].tasks_status = TaskStatus::Exited;
     }
 
-    fn run_next_task(&self) {
+    //寻找一个运行状态为 Ready 的应用并返回其 ID
+    fn find_next_task(&self) -> Option<usize> {
+        let inner = self.inner.exclusive_access(); //可变借用
+        let current = inner.current_task;
+        /*
+        举例：
+        current = 3;
+        num_app = 5;
+        (current + 1..current + self.num_app + 1) 即 [4,9) 即 4, 5, 6, 7, 8
+        对 num_app 取模得到下标 [4 % 5, 5 % 5, 6 % 5, 7 % 5, 8 % 5] = [4, 0, 1, 2, 3]
         
+        find 方法返回一个 Option<usize> 类型的值：
+        如果找到了满足条件的 id，则返回 Some(id)。如果没有找到任何满足条件的 id，则返回 None。
+        */
+        (current + 1..current + self.num_app + 1)
+            .map(|id| id % self.num_app)
+            .find(|id| {
+                inner.tasks[*id].tasks_status == TaskStatus::Ready
+            })
+    }
+
+    //运行下一个任务
+    fn run_next_task(&self) {
+        if let Some(next) = self.find_next_task() {
+            let mut inner = self.inner.exclusive_access(); //获取独占访问权
+            let current = inner.current_task;
+            //更新下一个任务的状态和索引
+            inner.tasks[next].tasks_status = TaskStatus::Running;
+            inner.current_task = next;
+            //获取当前和下一个任务的上下文指针
+            let current_task_cx_ptr = &mut inner.tasks[current].task_cx as *mut TaskContext;
+            let next_task_cx_ptr = &inner.tasks[next].task_cx as *const TaskContext;
+            //提前释放独占访问权，防止后续代码中再借用 inner
+            //需要手动 drop 掉我们获取到的 TaskManagerInner 的来自 UPSafeCell 的借用标记
+            drop(inner); 
+            unsafe {
+                __switch(current_task_cx_ptr, next_task_cx_ptr);
+            }
+            //跳转到用户态
+        } else {
+            panic!("All applications completed!");
+        }
     }
 }
 
