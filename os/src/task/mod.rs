@@ -4,10 +4,11 @@ mod switch;
 //#[allow(clippy::module_inception)]
 mod task;
 
+use crate::loader::{get_num_app, init_app_cx};
+use crate::sbi::shutdown;
+use crate::{config::MAX_APP_NUM, sync::UPSafeCell};
 use context::TaskContext;
 use switch::__switch;
-use crate::loader::{get_num_app, init_app_cx};
-use crate::{config::MAX_APP_NUM, sync::UPSafeCell};
 use lazy_static::*;
 use task::{TaskControlBlock, TaskStatus};
 
@@ -74,8 +75,23 @@ impl TaskManager {
             }
             //跳转到用户态
         } else {
-            panic!("All applications completed!");
+            println!("All applications completed!");
+            shutdown(false);
         }
+    }
+
+    fn run_first_task(&self) -> ! {
+        let mut inner = self.inner.exclusive_access();
+        let task0 = &mut inner.tasks[0];
+        task0.tasks_status = TaskStatus::Running;
+        let next_task_cx_ptr = &task0.task_cx as *const TaskContext;
+        drop(inner);
+        let mut _unused = TaskContext::zero_init();
+        //第一次传入一个未使用的上下文
+        unsafe {
+            __switch(&mut _unused as *mut TaskContext, next_task_cx_ptr);
+        }
+        panic!("unreachable in run_first_task!");
     }
 }
 
@@ -128,4 +144,8 @@ fn mark_current_exited() {
 
 fn run_next_task() {
     TASK_MANAGER.run_next_task();
+}
+
+pub fn run_first_task() {
+    TASK_MANAGER.run_first_task();
 }

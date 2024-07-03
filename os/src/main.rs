@@ -65,9 +65,11 @@ pub fn rust_main() -> ! {
     //sbi::shutdown(false);
     trap::init();
 
-    batch::init();
+    //batch::init();
     loader::load_app();
-    batch::run_next_app();
+    task::run_first_task();
+    //batch::run_next_app();
+    panic!("Unreachable in rust_main!");
 }
 
 fn clear_bss() {
