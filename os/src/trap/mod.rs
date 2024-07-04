@@ -8,7 +8,7 @@ use riscv::register::{
     mtvec::TrapMode,
 };
 
-use crate::batch::run_next_app;
+//use crate::batch::run_next_app;
 use crate::syscall::syscall;
 pub use context::TrapContext;
 
@@ -37,11 +37,11 @@ pub fn trap_handler(cx: &mut TrapContext) -> &mut TrapContext {
         //分别处理应用程序出现访存错误和非法指令错误的情形
         Trap::Exception(Exception::StoreFault) | Trap::Exception(Exception::StoreGuestPageFault) => {
             println!("[kernel] PageFault in application, kernel killed it.");
-            run_next_app();//切换并运行下一个应用程序
+            //run_next_app();//切换并运行下一个应用程序
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             println!("[kernel] IllegalInstruction in application, kernel killed it.");
-            run_next_app();
+            //run_next_app();
         }
         //遇到目前还不支持的 Trap 类型
         _ => {

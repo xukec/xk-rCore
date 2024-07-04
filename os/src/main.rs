@@ -10,7 +10,7 @@ mod console;
 mod lang_items;
 mod sbi;
 mod logging;
-mod batch;
+//mod batch;
 mod sync;
 mod trap;
 mod syscall;
