@@ -12,7 +12,7 @@ use switch::__switch;
 use lazy_static::*;
 use task::{TaskControlBlock, TaskStatus};
 
-pub struct TaskManager {
+struct TaskManager {
     num_app: usize,
     inner: UPSafeCell<TaskManagerInner>,
 } 
@@ -96,7 +96,7 @@ impl TaskManager {
 }
 
 lazy_static! {
-    pub static ref TASK_MANAGER: TaskManager = {
+    static ref TASK_MANAGER: TaskManager = {
         let num_app = get_num_app(); //获取app数量
         //任务数组，包含app数量个任务控制块，进行初始化
         let mut tasks = [
