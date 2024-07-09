@@ -5,6 +5,9 @@
 use core::arch::global_asm;
 use log::*;
 
+#[path = "boards/qemu.rs"]
+mod board;
+
 #[macro_use]
 mod console;
 mod lang_items;
@@ -17,6 +20,7 @@ mod syscall;
 mod config;
 mod loader;
 mod task;
+mod timer;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
@@ -67,6 +71,8 @@ pub fn rust_main() -> ! {
 
     //batch::init();
     loader::load_app();
+    trap::enable_timer_interrupt();
+    timer::set_next_trigger();
     task::run_first_task();
     //batch::run_next_app();
     panic!("Unreachable in rust_main!");

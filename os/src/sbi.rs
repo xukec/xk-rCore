@@ -14,3 +14,8 @@ pub fn shutdown(failure: bool) -> ! {
     }
     unreachable!()
 }
+
+//sbi提供的用来设置 mtimecmp 的值的api
+pub fn set_mtimecmp(mtimecmp: usize) {
+    sbi_rt::set_timer(mtimecmp as _);
+}

@@ -3,13 +3,15 @@ mod context;
 use core::arch::global_asm;
 
 use riscv::register::{
-    stvec, stval,
-    scause::{self, Exception, Trap},
+    stvec, stval, sie,
+    scause::{self, Exception, Interrupt, Trap},
     mtvec::TrapMode,
 };
 
 //use crate::batch::run_next_app;
 use crate::syscall::syscall;
+use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
+use crate::timer::set_next_trigger;
 pub use context::TrapContext;
 
 global_asm!(include_str!("trap.S"));
@@ -18,6 +20,14 @@ pub fn init() {
     extern "C" { fn __alltraps(); }
     unsafe {
         stvec::write(__alltraps as usize, TrapMode::Direct);
+    }
+}
+
+//定时中断使能
+//避免 S 特权级时钟中断被屏蔽，进行初始化设置
+pub fn enable_timer_interrupt() {
+    unsafe {
+        sie::set_stimer();
     }
 }
 
@@ -38,10 +48,17 @@ pub fn trap_handler(cx: &mut TrapContext) -> &mut TrapContext {
         Trap::Exception(Exception::StoreFault) | Trap::Exception(Exception::StoreGuestPageFault) => {
             println!("[kernel] PageFault in application, kernel killed it.");
             //run_next_app();//切换并运行下一个应用程序
+            exit_current_and_run_next(); //退出当前任务，运行下一个任务
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             println!("[kernel] IllegalInstruction in application, kernel killed it.");
             //run_next_app();
+            exit_current_and_run_next(); //退出当前任务，运行下一个任务
+        }
+        //处理触发了一个 S 特权级时钟中断情况
+        Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            set_next_trigger(); //重新设置一个 10ms 的计时器
+            suspend_current_and_run_next(); //暂停当前应用并切换到下一个
         }
         //遇到目前还不支持的 Trap 类型
         _ => {
