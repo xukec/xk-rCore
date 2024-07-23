@@ -1,6 +1,9 @@
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
+
+extern crate alloc;
 
 use core::arch::global_asm;
 use log::*;
@@ -21,6 +24,7 @@ mod config;
 mod loader;
 mod task;
 mod timer;
+mod mm;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("link_app.S"));
@@ -67,6 +71,8 @@ pub fn rust_main() -> ! {
 
     //panic!("Shutdown machine!");
     //sbi::shutdown(false);
+    mm::init();
+    mm::heap_allocator::heap_test();
     trap::init();
 
     //batch::init();
