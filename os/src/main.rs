@@ -4,6 +4,7 @@
 #![feature(alloc_error_handler)]
 
 extern crate alloc;
+extern crate bitflags;
 
 use core::arch::global_asm;
 use log::*;
