@@ -97,12 +97,23 @@ impl PhysAddr {
     pub fn page_offset(&self) -> usize {
         self.0 & (PAGE_SIZE - 1) //1111 1111 1111 如 0x1234_5678_9abc_def0 -> 0xef0
     }
-    //计算当前物理地址所属的物理页面号，表示该地址在物理内存中的哪个页面。(下取整)
+    //计算当前物理地址所属的物理页面号，表示该地址在物理内存中的哪个页面。(下取整) 2.4 -> 2
     pub fn floor(&self) -> PhysPageNum { PhysPageNum(self.0 / PAGE_SIZE) }
-    //(上取整)
+    //(向上取整) 2.4 -> 3
     pub fn ceil(&self) -> PhysPageNum { PhysPageNum((self.0 + (PAGE_SIZE - 1)) / PAGE_SIZE) }
     //对齐
     pub fn aligned(&self) -> bool { self.page_offset() == 0 }
+}
+
+impl PhysPageNum {
+    //获取一个指向物理页框内存的可变字节数组
+    pub fn get_bytes_array(&self) -> &'static mut [u8] {
+        let pa: PhysAddr = (*self).into();
+        //从物理地址创建一个指向内存的可变切片
+        unsafe {
+            core::slice::from_raw_parts_mut(pa.0 as *mut u8, 4096)
+        }
+    }
 }
 
 //通过物理地址获得物理页面号
