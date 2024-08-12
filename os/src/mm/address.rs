@@ -1,4 +1,7 @@
+use core::fmt::{self, Debug, Formatter};
+
 use crate::config::{PAGE_SIZE_BITS, PAGE_SIZE}; //Page Offset(12位，4kib)
+use super::PageTableEntry;
 
 
 //Physical Address (56bits) [Physical Page Number (PPN 44bits), Page Offset (12bits)]
@@ -19,6 +22,33 @@ pub struct PhysPageNum(pub usize);
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct VirtPageNum(pub usize);
+
+///Debugging
+//为 PhysAddr 结构体实现 Debug trait。
+//方法定义了当你使用 {:?} 打印 PhysAddr 类型时，会输出什么内容。
+impl Debug for PhysAddr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("PA:{:#x}", self.0))
+    }
+}
+
+impl Debug for PhysPageNum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("PPN:{:#x}", self.0))
+    }
+}
+
+impl Debug for VirtPageNum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("VPN:{:#x}", self.0))
+    }
+}
+
+impl Debug for VirtAddr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("VA:{:#x}", self.0))
+    }
+}
 
 /// T: {PhysAddr, VirtAddr, PhysPageNum, VirtPageNum}
 /// T -> usize: T.0
@@ -114,6 +144,20 @@ impl PhysPageNum {
             core::slice::from_raw_parts_mut(pa.0 as *mut u8, 4096)
         }
     }
+    //获取一个指向页节点（包含512个页表项）的可变引用
+    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
+        let pa: PhysAddr = (*self).into();
+        unsafe {
+            core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, 512)
+        }
+    }
+    //获取一个恰好放在一个物理页帧开头的类型为 T 的数据的可变引用
+    pub fn get_mut<T>(&self) -> &'static mut T {
+        let pa: PhysAddr = (*self).into();
+        unsafe {
+            (pa.0 as *mut T).as_mut().unwrap()
+        }
+    }
 }
 
 //通过物理地址获得物理页面号
@@ -142,6 +186,25 @@ impl VirtAddr {
     pub fn ceil(&self) -> VirtPageNum { VirtPageNum((self.0 + (PAGE_SIZE - 1)) / PAGE_SIZE) }
     //对齐
     pub fn aligned(&self) -> bool { self.page_offset() == 0 }
+}
+
+impl VirtPageNum {
+    // sv39 虚拟页号27位 页偏移12位
+    /*
+        0       1       2   
+    | 高9位 | 中9位 | 低9位 |
+    一级页表 二级页表 三级页表
+    */
+    pub fn indexes(&self) -> [usize; 3] {
+        let mut vpn = self.0;
+        let mut idx = [0usize; 3];
+        //rev 逆序 2 1 0
+        for i in (0..3).rev() {
+            idx[i] = vpn & 511; //vpn & 1 1111 1111 (保留低9位)
+            vpn >>= 9;
+        }
+        idx
+    }
 }
 
 //通过虚拟地址获得虚拟页面号
