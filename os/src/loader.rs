@@ -53,6 +53,25 @@ pub fn get_num_app() -> usize {
     }
     unsafe { (_num_app as usize as *const usize).read_volatile() }
 }
+//获取|appi|
+pub fn get_app_data(app_id: usize) -> &'static [u8] {
+    extern "C" { fn _num_app(); } //link_app.S内app数据信息的位置
+
+    let num_app_ptr = _num_app as usize as *const usize; //先转换为usize类型，在转化为指向usize的常量指针
+    let num_app = get_num_app(); //从指针位置读取值 也就是app数量
+    //|num_app|app0|app1|app2|app3|app4|app4end|
+    //获取app0 ~ app4end
+    let app_start = unsafe {
+        core::slice::from_raw_parts(num_app_ptr.add(1), num_app + 1)
+    };
+    assert!(app_id < num_app);
+
+    unsafe {
+        core::slice::from_raw_parts(
+            app_start[app_id] as *const u8, 
+            app_start[app_id + 1] - app_start[app_id])
+    }
+}
 
 //加载
 pub fn load_app() {

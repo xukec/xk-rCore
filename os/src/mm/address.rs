@@ -221,3 +221,96 @@ impl From<VirtPageNum> for VirtAddr {
         Self(value.0 << PAGE_SIZE_BITS)
     }
 }
+
+pub trait StepByOne {
+    fn step(&mut self);
+}
+//访问下一个物理页
+impl StepByOne for PhysPageNum {
+    fn step(&mut self) {
+        self.0 += 1;
+    }
+}
+//访问下一个虚拟页
+impl StepByOne for VirtPageNum {
+    fn step(&mut self) {
+        self.0 += 1;
+    }
+}
+//泛型结构体，表示一个有起始值和结束值的区间。这个区间的类型由 T 决定。
+#[derive(Copy, Clone)]
+pub struct SimpleRange<T>
+where
+    T: StepByOne +  Copy + PartialEq + PartialOrd + Debug
+{
+    l: T,
+    r: T,
+}
+
+impl<T> SimpleRange<T>
+where 
+    T: StepByOne + Copy + PartialEq + PartialOrd + Debug
+{
+    //创建一个新的 SimpleRange 实例
+    pub fn new(start: T, end: T) -> Self {
+        assert!(start <= end, "start {:?} > end {:?}!", start, end);
+        Self { l: start, r: end }
+    }
+    //返回区间的起始值和结束值
+    pub fn get_start(&self) -> T {
+        self.l
+    }
+    pub fn get_end(&self) -> T {
+        self.r
+    }
+}
+
+//迭代器结构体，用于遍历 SimpleRange 的值。
+pub struct SimpleRangeIterator<T>
+where
+    T: StepByOne + Copy + PartialEq + PartialOrd + Debug,
+{
+    current: T,//当前正在遍历的值
+    end: T,//遍历的结束值。
+}
+
+impl<T> SimpleRangeIterator<T>
+where
+    T: StepByOne + Copy + PartialEq + PartialOrd + Debug,
+{
+    //创建一个新的迭代器实例，接收起始值和结束值。
+    pub fn new(l: T, r: T) -> Self {
+        Self { current: l, end: r }
+    }
+}
+
+impl<T> Iterator for SimpleRangeIterator<T>
+where
+    T: StepByOne + Copy + PartialEq + PartialOrd + Debug,
+{
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current == self.end {
+            None
+        } else {
+            let t = self.current;
+            self.current.step();
+            Some(t)
+        }
+    }
+}
+
+//IntoIterator trait 的实现允许 SimpleRange 可以直接转换为一个迭代器。
+impl<T> IntoIterator for SimpleRange<T>
+where 
+    T: StepByOne + Copy + PartialEq + PartialOrd + Debug
+{
+    type Item = T; //定义了迭代器中每个项目的类型，这里是 T。
+    type IntoIter = SimpleRangeIterator<T>; //定义了实际的迭代器类型
+    // 用于创建一个新的迭代器，使用 SimpleRange 的起始值和结束值。
+    fn into_iter(self) -> Self::IntoIter {
+        SimpleRangeIterator::new(self.l, self.r)
+    }
+}
+
+pub type VPNRange = SimpleRange<VirtPageNum>;
